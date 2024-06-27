@@ -1,0 +1,91 @@
+# Importing necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from textblob import TextBlob
+
+# Load the Twitter Entity Sentiment Analysis dataset
+file_path = "path_to_downloaded_file/twitter_sentiment_data.csv"  # Replace with your actual file path
+twitter_data = pd.read_csv(file_path)
+
+# Displaying the first few rows of the dataset
+print(twitter_data.head())
+
+# Checking the dataset information
+print("\nDataset Information:")
+print(twitter_data.info())
+
+# Perform basic statistics
+print("\nSummary Statistics:")
+print(twitter_data.describe(include='all'))
+
+# Data cleaning: handle missing values if any
+twitter_data.dropna(inplace=True)
+
+# Function to clean the text data
+def clean_text(text):
+    # Remove special characters, numbers, and punctuations
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    return text
+
+# Apply the clean_text function to the 'text' column
+twitter_data['cleaned_text'] = twitter_data['text'].apply(clean_text)
+
+# Sentiment analysis using TextBlob
+def get_sentiment(text):
+    analysis = TextBlob(text)
+    if analysis.sentiment.polarity > 0:
+        return 'positive'
+    elif analysis.sentiment.polarity == 0:
+        return 'neutral'
+    else:
+        return 'negative'
+
+# Apply the get_sentiment function to the 'cleaned_text' column
+twitter_data['sentiment'] = twitter_data['cleaned_text'].apply(get_sentiment)
+
+# Display sentiment counts
+print("\nSentiment Counts:")
+print(twitter_data['sentiment'].value_counts())
+
+# Visualization of sentiment distribution
+plt.figure(figsize=(8, 6))
+sns.countplot(x='sentiment', data=twitter_data, palette='viridis')
+plt.title('Sentiment Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.show()
+
+# Word cloud for positive, negative, and neutral tweets
+from wordcloud import WordCloud
+
+# Generate word clouds
+positive_tweets = ' '.join([text for text in twitter_data['cleaned_text'][twitter_data['sentiment'] == 'positive']])
+negative_tweets = ' '.join([text for text in twitter_data['cleaned_text'][twitter_data['sentiment'] == 'negative']])
+neutral_tweets = ' '.join([text for text in twitter_data['cleaned_text'][twitter_data['sentiment'] == 'neutral']])
+
+# Plot word clouds
+plt.figure(figsize=(16, 12))
+
+plt.subplot(1, 3, 1)
+wordcloud = WordCloud(width=800, height=600, background_color='white').generate(positive_tweets)
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.title('Positive Tweets')
+plt.axis('off')
+
+plt.subplot(1, 3, 2)
+wordcloud = WordCloud(width=800, height=600, background_color='white').generate(negative_tweets)
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.title('Negative Tweets')
+plt.axis('off')
+
+plt.subplot(1, 3, 3)
+wordcloud = WordCloud(width=800, height=600, background_color='white').generate(neutral_tweets)
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.title('Neutral Tweets')
+plt.axis('off')
+
+plt.show()
